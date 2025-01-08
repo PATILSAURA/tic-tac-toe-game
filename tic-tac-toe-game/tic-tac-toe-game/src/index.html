@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-br from-blue-500 to-purple-700 min-h-screen flex flex-col justify-center items-center">
+  <div class="text-center mb-8">
+    <h1 class="text-white text-4xl font-bold mb-4">Tic Tac Toe</h1>
+    <div class="mb-4">
+      <label for="difficulty" class="text-white text-lg mr-2">Select Level:</label>
+      <select id="difficulty" class="px-4 py-2 rounded bg-white text-black">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+    </div>
+    <button id="startButton" class="px-6 py-3 bg-green-500 text-white text-lg font-semibold rounded shadow-lg hover:bg-green-600 transition">Start Game</button>
+  </div>
+
+  <div id="gameContainer" class="hidden grid grid-cols-3 gap-4 max-w-xs mx-auto">
+    <!-- Game cells will be dynamically generated -->
+  </div>
+
+  <!-- Winning Popup -->
+  <div id="popup" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+    <div class="bg-white p-6 rounded-lg shadow-xl text-center">
+      <h2 id="winnerText" class="text-2xl font-bold mb-4"></h2>
+      <button id="restartButton" class="px-6 py-3 bg-blue-500 text-white text-lg font-semibold rounded shadow-lg hover:bg-blue-600 transition">Restart</button>
+    </div>
+  </div>
+
+  <script>
+    const startButton = document.getElementById('startButton');
+    const gameContainer = document.getElementById('gameContainer');
+    const popup = document.getElementById('popup');
+    const winnerText = document.getElementById('winnerText');
+    const restartButton = document.getElementById('restartButton');
+    const difficultySelect = document.getElementById('difficulty');
+    let currentPlayer = 'X';
+    let board = Array(9).fill(null);
+    let difficulty = 'easy';
+    // Create game board
+    function createBoard() {
+      gameContainer.innerHTML = '';
+      board = Array(9).fill(null);
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'w-20 h-20 bg-white text-4xl font-bold flex justify-center items-center rounded-lg shadow cursor-pointer hover:scale-105 transform transition';
+        cell.dataset.index = i;
+        cell.addEventListener('click', handleCellClick);
+        gameContainer.appendChild(cell);
+      }
+    }
+
+    function handleCellClick(e) {
+      const index = e.target.dataset.index;
+      if (board[index] || checkWinner()) return;
+      board[index] = currentPlayer;
+      e.target.textContent = currentPlayer;
+      e.target.classList.add(currentPlayer === 'X' ? 'text-blue-500' : 'text-red-500');
+      if (checkWinner()) {
+        showWinner(`${currentPlayer} wins!`);
+      } else if (board.every(cell => cell)) {
+        showWinner("It's a draw!");
+      } else {
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        if (currentPlayer === 'O' && difficulty !== 'easy') {
+          computerMove();
+        }
+      }
+    }
+
+    function computerMove() {
+      let move;
+      if (difficulty === 'medium') {
+        move = findBestMove();
+      } else if (difficulty === 'hard') {
+        move = findOptimalMove();
+      }
+      if (move !== undefined) {
+        const cell = gameContainer.children[move];
+        board[move] = 'O';
+        cell.textContent = 'O';
+        cell.classList.add('text-red-500');
+        if (checkWinner()) {
+          showWinner('O wins!');
+        } else {
+          currentPlayer = 'X';
+        }
+      }
+    }
+
+    function findBestMove() {
+      for (let i = 0; i < board.length; i++) {
+        if (!board[i]) return i;
+      }
+    }
+
+    function findOptimalMove() {
+      const winPatterns = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6]
+      ];
+      for (let pattern of winPatterns) {
+        const [a, b, c] = pattern;
+        if (board[a] === 'O' && board[b] === 'O' && !board[c]) return c;
+        if (board[a] === 'O' && !board[b] && board[c] === 'O') return b;
+        if (!board[a] && board[b] === 'O' && board[c] === 'O') return a;
+      }
+      return findBestMove();
+    }
+
+    function checkWinner() {
+      const winPatterns = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6]
+      ];
+      return winPatterns.some(pattern => {
+        const [a, b, c] = pattern;
+        return board[a] && board[a] === board[b] && board[a] === board[c];
+      });
+    }
+
+    function showWinner(message) {
+      winnerText.textContent = message;
+      popup.classList.remove('hidden');
+    }
+    startButton.addEventListener('click', () => {
+      difficulty = difficultySelect.value;
+      startButton.classList.add('hidden');
+      gameContainer.classList.remove('hidden');
+      createBoard();
+    });
+    restartButton.addEventListener('click', () => {
+      popup.classList.add('hidden');
+      createBoard();
+      currentPlayer = 'X';
+    });
+  </script>
+</body>
+
+</html>
